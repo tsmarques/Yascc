@@ -32,6 +32,11 @@ locc (x:xs) langs t_flag = do
   putStrLn(msg)
   locc xs (add_lang_count (file_lang x) n_lines langs) t_flag -- update the number of lines for a given language and continue
 
+
+-- For a given language, updates the total number of lines in the tuple List
+-- maintained by the main function "locc"
+-- This list is constructed in all cases, but only when the option "--total"
+-- is given to the program, that it's printed out
 add_lang_count :: String -> Int -> [(String, Int)] -> [(String, Int)]
 add_lang_count lang n_lines [] = [(lang, n_lines)]
 add_lang_count lang n_lines (x:xs)
@@ -39,15 +44,10 @@ add_lang_count lang n_lines (x:xs)
   | otherwise = x : add_lang_count lang n_lines xs
                 where 
                   updated_tuple = (fst(x), snd(x) + n_lines)
-                  
-print_total_res :: [(String, Int)] -> IO()
-print_total_res [] = putStr("")
-print_total_res (x:xs) = do
-  putStrLn(lang_total)
-  print_total_res xs
-    where
-      lang_total = fst(x) ++ ": " ++ show(snd(x)) ++ " lines."
 
+
+-- Count the number of lines in a given file, according to it's programming
+-- language. It ignores comments(statement or block) and new lines
 count_loc :: [String] ->  Int
 count_loc [] = 0
 count_loc (x:xs)
@@ -56,6 +56,7 @@ count_loc (x:xs)
   | is_block x = count_loc(remove_block(x:xs))
   | otherwise = 1 + count_loc xs
                 
+
 file_lang :: String -> String
 file_lang [] = ""
 file_lang(_:".java") = "java"
@@ -63,26 +64,35 @@ file_lang(_:".c") = "C"
 file_lang(_:"hs") = "Haskell"
 file_lang(x:xs) = file_lang xs
 
+
+-- Returns if a given character is a new line
 is_new_line :: String -> Bool
 is_new_line "" = True 
 is_new_line _ = False
 
+-- Returns if a given line has a simple comment(i.e in C, //)
 is_commented :: String -> Bool
 is_commented [] = False
 is_commented('/':'/':xs) = True
 is_commented(x:xs) = is_commented xs
 
+-- Returns if in a given line, starts a comment block(i.e in C, /*)
 is_block :: String -> Bool
 is_block [] = False
 is_block('/':'*': xs) = True
 is_block (x:xs) = is_block xs
 
+-- Returns the file lines, without the comment block. 
+-- This assumes that after the end block, there's no code.
+-- i.e in C, after */ comes a new line, and note code
 remove_block :: [String] -> [String]
 remove_block [] = []
 remove_block(x:xs)
   | has_end_block x == True = xs
   | otherwise = remove_block xs
 
+-- Returns if a given line has the end block characters.
+-- i.e in C, */
 has_end_block :: String -> Bool
 has_end_block [] = False
 has_end_block('*':'/':xs) = True
@@ -106,3 +116,11 @@ print_lines [] = putStrLn ""
 print_lines (x:xs) = do
   putStrLn x
   print_lines xs
+  
+print_total_res :: [(String, Int)] -> IO()
+print_total_res [] = putStr("")
+print_total_res (x:xs) = do
+  putStrLn(lang_total)
+  print_total_res xs
+    where
+      lang_total = fst(x) ++ ": " ++ show(snd(x)) ++ " lines."
