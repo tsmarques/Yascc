@@ -16,32 +16,37 @@ main = do
    
 parse_arg :: [String] -> IO()
 parse_arg [] = putStrLn("No arguments")
-parse_arg (x:xs)
-  | (x == "--total") = locc_sum(xs)
-  | otherwise = locc(x:xs)
+parse_arg ("--total" : []) = putStrLn("No arguments")
+parse_arg args@(x:xs)
+  | (x == "--total") = locc xs [] True
+  | otherwise = locc args [] False
 
-locc :: [String] -> IO()
-locc [] = putStr("")
-locc (x:xs) = do 
+locc :: [String] -> [(String, Int)] -> Bool -> IO()
+locc [] langs t_flag
+  | t_flag == False = putStr("")
+  | otherwise = print_total_res langs 
+locc (x:xs) langs t_flag = do 
   file <- readFile x
   let n_lines = count_loc(lines(file))
   let msg = x ++ ": " ++  (show(n_lines))
   putStrLn(msg)
-  locc xs
-  
-locc_sum :: [String] -> IO()
-locc_sum (x:xs) = do 
-  file <- readFile x
-  let n_lines = count_loc(lines(file))
-  let msg = x ++ ": " ++  (show(n_lines))
-  putStrLn(msg)
-  locc_sum xs
-  
--- locc :: [String] -> IO()
--- locc [] = putStrLn("")
--- locc (x:xs) = do 
---   file <- readFile x
---   print_parsed_file(lines(file))
+  locc xs (add_lang_count (file_lang x) n_lines langs) t_flag -- update the number of lines for a given language and continue
+
+add_lang_count :: String -> Int -> [(String, Int)] -> [(String, Int)]
+add_lang_count lang n_lines [] = [(lang, n_lines)]
+add_lang_count lang n_lines (x:xs)
+  | (fst(x) == lang) = updated_tuple : xs
+  | otherwise = x : add_lang_count lang n_lines xs
+                where 
+                  updated_tuple = (fst(x), snd(x) + n_lines)
+                  
+print_total_res :: [(String, Int)] -> IO()
+print_total_res [] = putStr("")
+print_total_res (x:xs) = do
+  putStrLn(lang_total)
+  print_total_res xs
+    where
+      lang_total = fst(x) ++ ": " ++ show(snd(x)) ++ " lines."
 
 count_loc :: [String] ->  Int
 count_loc [] = 0
