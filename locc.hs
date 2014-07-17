@@ -85,6 +85,8 @@ file_lang [] = ""
 file_lang(_:".java") = "java"
 file_lang(_:".c") = "C"
 file_lang(_:"hs") = "Haskell"
+file_lang(_:".R") = "R"
+file_lang(_:".py") = "python"
 file_lang(x:xs) = file_lang xs
 
 -- Returns if a given character is a new line
@@ -105,6 +107,8 @@ is_commented [] _ = False
 is_commented ('-':'-':xs) "Haskell" = True
 is_commented('/':'/':xs) "C" = True
 is_commented('/':'/':xs) "java" = True
+is_commented('#':xs) "R" = True
+is_commented('#':xs) "python" = True
 is_commented (x:xs) lang = is_commented xs lang
 
 -- Returns if in a given line, starts a comment block(i.e in C, /*)
