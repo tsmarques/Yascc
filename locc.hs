@@ -13,30 +13,52 @@ import System.Directory
 main = do  
    args <- getArgs
    parse_arg(args)
-   
+
 parse_arg :: [String] -> IO()
 parse_arg [] = putStrLn("No arguments")
-parse_arg ("--total" : []) = putStrLn("No arguments")
+parse_arg (["--total"]) = putStrLn("No arguments")
 parse_arg args@(x:xs)
-  | (x == "--total") = locc xs [] True
-  | otherwise = locc args [] False
+  | (x == "--total") = locc (parse_files xs) [] True
+  | otherwise = locc (parse_files args) [] False
+                
+-- Removes files with no language specification
+-- i.e locc.hs is haskell but locc is unknown
+parse_files :: [String] -> [String]
+parse_files [] = []
+parse_files (x:xs)
+  | (file_lang x == "") = parse_files xs
+  | otherwise = x : parse_files xs
 
+-- Main function
+-- t_flag is used to signal if the user wants the total
+-- of LOC per language printed.
 locc :: [String] -> [(String, Int)] -> Bool -> IO()
 locc [] langs t_flag
-  | t_flag == False = putStr("")
-  | otherwise = print_total_res langs 
+  | (t_flag == False) = putStr("") -- program finishes
+  | otherwise = do -- else, print LOC per language
+    putStrLn ""
+    print_total_res langs
 locc (x:xs) langs t_flag = do 
   file <- readFile x
   let n_lines = count_loc(lines(file))
-  let msg = x ++ ": " ++  (show(n_lines))
+  let msg = x ++ ": " ++  (show(n_lines)) ++ " lines."
   putStrLn(msg)
   locc xs (add_lang_count (file_lang x) n_lines langs) t_flag -- update the number of lines for a given language and continue
+  
+-- Prints all LOC read in the given file(s), per language.
+print_total_res :: [(String, Int)] -> IO()
+print_total_res [] = putStr("")
+print_total_res (x:xs) = do
+  putStrLn(lang_total)
+  print_total_res xs
+    where
+      lang_total = fst(x) ++ ": " ++ show(snd(x)) ++ " lines."
 
 
 -- For a given language, updates the total number of lines in the tuple List
 -- maintained by the main function "locc"
 -- This list is constructed in all cases, but only when the option "--total"
--- is given to the program, that it's printed out
+-- is passed to the program, that it's printed out
 add_lang_count :: String -> Int -> [(String, Int)] -> [(String, Int)]
 add_lang_count lang n_lines [] = [(lang, n_lines)]
 add_lang_count lang n_lines (x:xs)
@@ -56,14 +78,12 @@ count_loc (x:xs)
   | is_block x = count_loc(remove_block(x:xs))
   | otherwise = 1 + count_loc xs
                 
-
 file_lang :: String -> String
 file_lang [] = ""
 file_lang(_:".java") = "java"
 file_lang(_:".c") = "C"
 file_lang(_:"hs") = "Haskell"
 file_lang(x:xs) = file_lang xs
-
 
 -- Returns if a given character is a new line
 is_new_line :: String -> Bool
@@ -84,7 +104,11 @@ is_block (x:xs) = is_block xs
 
 -- Returns the file lines, without the comment block. 
 -- This assumes that after the end block, there's no code.
--- i.e in C, after */ comes a new line, and note code
+-- i.e in C, after */ comes a new line, and not code
+-- The program "fails" if a line is something like:
+-- /* comments */ while()... 
+-- locc will assume that the whole line is commented and will output
+-- a wrong number of LOC
 remove_block :: [String] -> [String]
 remove_block [] = []
 remove_block(x:xs)
@@ -116,11 +140,3 @@ print_lines [] = putStrLn ""
 print_lines (x:xs) = do
   putStrLn x
   print_lines xs
-  
-print_total_res :: [(String, Int)] -> IO()
-print_total_res [] = putStr("")
-print_total_res (x:xs) = do
-  putStrLn(lang_total)
-  print_total_res xs
-    where
-      lang_total = fst(x) ++ ": " ++ show(snd(x)) ++ " lines."
