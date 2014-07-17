@@ -23,6 +23,7 @@ parse_arg args@(x:xs)
                 
 -- Removes files with no language specification
 -- i.e locc.hs is haskell but locc is unknown
+-- and therefore removed.
 parse_files :: [String] -> [String]
 parse_files [] = []
 parse_files (x:xs)
@@ -40,11 +41,11 @@ locc [] langs t_flag
     print_total_res langs
 locc (x:xs) langs t_flag = do 
   file <- readFile x
-  let n_lines = count_loc(lines(file))
+  let n_lines = count_loc(lines(file)) (file_lang x)
   let msg = x ++ ": " ++  (show(n_lines)) ++ " lines."
   putStrLn(msg)
   locc xs (add_lang_count (file_lang x) n_lines langs) t_flag -- update the number of lines for a given language and continue
-  
+
 -- Prints all LOC read in the given file(s), per language.
 print_total_res :: [(String, Int)] -> IO()
 print_total_res [] = putStr("")
@@ -70,14 +71,15 @@ add_lang_count lang n_lines (x:xs)
 
 -- Count the number of lines in a given file, according to it's programming
 -- language. It ignores comments(statement or block) and new lines
-count_loc :: [String] ->  Int
-count_loc [] = 0
-count_loc (x:xs)
-  | is_new_line x = count_loc xs
-  | is_commented x = count_loc xs
-  | is_block x = count_loc(remove_block(x:xs))
-  | otherwise = 1 + count_loc xs
-                
+count_loc :: [String] -> String ->  Int
+count_loc [] _ = 0
+count_loc line@(x:xs) lang
+  | (is_new_line x) = count_loc xs lang
+  | (is_tab x) = count_loc xs lang
+  | (is_commented x lang) = count_loc xs lang
+  | (is_block x lang) = count_loc(remove_block line lang) lang
+  | otherwise = 1 + count_loc xs lang
+
 file_lang :: String -> String
 file_lang [] = ""
 file_lang(_:".java") = "java"
@@ -90,17 +92,28 @@ is_new_line :: String -> Bool
 is_new_line "" = True 
 is_new_line _ = False
 
+-- Returns if a given character is a tab only or group of spaces
+is_tab :: String -> Bool
+is_tab [] = True
+is_tab (x:xs)
+  | (x == ' ') || (x == '\t') = is_tab xs
+  | otherwise = False
+
 -- Returns if a given line has a simple comment(i.e in C, //)
-is_commented :: String -> Bool
-is_commented [] = False
-is_commented('/':'/':xs) = True
-is_commented(x:xs) = is_commented xs
+is_commented :: String -> String -> Bool
+is_commented [] _ = False
+is_commented ('-':'-':xs) "Haskell" = True
+is_commented('/':'/':xs) "C" = True
+is_commented('/':'/':xs) "java" = True
+is_commented (x:xs) lang = is_commented xs lang
 
 -- Returns if in a given line, starts a comment block(i.e in C, /*)
-is_block :: String -> Bool
-is_block [] = False
-is_block('/':'*': xs) = True
-is_block (x:xs) = is_block xs
+is_block :: String -> String -> Bool
+is_block [] _ = False
+is_block('/':'*': xs) "C" = True
+is_block('/':'*': xs) "java" = True
+is_block('{':'-': xs) "Haskell" = True
+is_block (x:xs) lang = is_block xs lang
 
 -- Returns the file lines, without the comment block. 
 -- This assumes that after the end block, there's no code.
@@ -109,31 +122,40 @@ is_block (x:xs) = is_block xs
 -- /* comments */ while()... 
 -- locc will assume that the whole line is commented and will output
 -- a wrong number of LOC
-remove_block :: [String] -> [String]
-remove_block [] = []
-remove_block(x:xs)
-  | has_end_block x == True = xs
-  | otherwise = remove_block xs
+remove_block :: [String] -> String -> [String]
+remove_block [] _ = []
+remove_block (x:xs) lang
+  | has_end_block x lang == True = xs
+  | otherwise = remove_block xs lang
 
 -- Returns if a given line has the end block characters.
 -- i.e in C, */
-has_end_block :: String -> Bool
-has_end_block [] = False
-has_end_block('*':'/':xs) = True
-has_end_block(x:xs) = has_end_block xs
+has_end_block :: String -> String -> Bool
+has_end_block [] _ = False
+has_end_block ('*':'/':xs) "C"  = True
+has_end_block ('*':'/':xs) "java"  = True
+has_end_block ('-':'}':xs) "Haskell"  = True
+has_end_block (x:xs) lang = has_end_block xs lang
 
 ----------------- Debug functions ---------------------
 
-print_parsed_file :: [String] ->  IO()
-print_parsed_file [] = putStr ""
-print_parsed_file (x:xs)
-  | is_new_line x = print_parsed_file xs
-  | is_commented x = print_parsed_file xs
-  | is_block x = print_parsed_file(remove_block(x:xs))
+-- Reads a file and prints it without comments, tabs and new lines
+locc_print :: String -> String -> IO()
+locc_print [] _ = putStrLn("")
+locc_print x lang = do 
+  file <- readFile x
+  print_parsed_file (lines(file)) lang  
+
+print_parsed_file :: [String] ->  String -> IO()
+print_parsed_file [] _ = putStr ""
+print_parsed_file (x:xs) lang
+  | (is_new_line x) = print_parsed_file xs lang
+  | (is_tab x) = print_parsed_file xs lang
+  | (is_commented x lang) = print_parsed_file xs lang
+  | (is_block x lang) = print_parsed_file (remove_block(x:xs) lang) lang
   | otherwise = do
     putStrLn x
-    print_parsed_file xs
-
+    print_parsed_file xs lang
 
 print_lines :: [String] -> IO()
 print_lines [] = putStrLn ""
