@@ -5,51 +5,69 @@ and comments
 -}
 
 -- TODO: add "--dump" option, to print parsed files, to new files
--- TODO: change "--total" option, not to print loc per file, only per language
--- TODO: read files from directories
--- TODO: functions that return comment characters per language, instead of having them hard-coded more than once in functions(is_tab, etc)
 -- TODO: clean and simplify(?) code
 
 module Main( main ) where
-import System.Environment
+import System.Environment -- used by getArgs
 import System.IO
 import System.Directory
+import System.FilePath ((</>))
+import Data.List
 import Aux
 
 
 main = do  
    args <- getArgs
-   parse_arg(args)
+   print args
+   print(nub(args))
+--   parse_arg(nub(args))
 
--- Initial parsing
+-- Parsing of arguments
 parse_arg :: [String] -> IO()
 parse_arg [] = putStrLn("No arguments")
 parse_arg (["--total"]) = putStrLn("No arguments")
 parse_arg args@(x:xs)
-  | (x == "--total") = yascc (parse_files xs) [] True
-  | otherwise = yascc (parse_files args) [] False
+  | (x == "--total") = do
+    files <- parse_files xs
+    yascc files [] True
+  | otherwise = do
+    files <- parse_files args
+    yascc files [] False
 
 
 -- Removes files with no language specification
 -- i.e yascc.hs is haskell but yascc is unknown
 -- and therefore removed.
-parse_files :: [String] -> [String]
-parse_files [] = []
-parse_files (x:xs)
---  | (doesDirectoryExist x) = [] --parse_files ((dirContents x) : xs)
-  | (file_lang x == "") = parse_files xs
-  | otherwise = x : parse_files xs
+-- If there's any directory  reads its content(files or folders)
+parse_files :: [FilePath] -> IO[FilePath]
+parse_files [] = return []
+parse_files (x:xs) = do
+  isDir <- doesDirectoryExist x
+  if isDir then do
+    tmp <- getCurrentDirectory
+    content <- getAbsDirectoryContents x
+    setCurrentDirectory x -- hack to make currDir and topDir correct.Not definitive
+    currDir <- canonicalizePath "."
+    topDir <- canonicalizePath ".."
+    let filt_cont = filter(`notElem` [currDir, topDir]) content -- ignore "." and ".." folders
+    setCurrentDirectory tmp
+    parse_files (filt_cont ++ xs)
+    else 
+    if file_lang x == "" then parse_files xs -- file type no recognised
+    else fmap (x:) (parse_files xs) -- recognises file type, then add it to list
 
-dirContents :: String -> [String]
-dirContents dir = do
-  names <- getDirectoryContents dir
-  let properNames = filter (`not` [".", ".."]) dir
-  return(properNames)
+-- I'm not the "author" of this function.
+-- Found it in:
+-- http://stackoverflow.com/questions/8572196/directory-contents-in-haskell
+-- and was exactly what I needed but wasn't managing to code
+-- This returns the absolute path of a file/directory
+getAbsDirectoryContents :: FilePath -> IO [FilePath]
+getAbsDirectoryContents dir = getDirectoryContents dir >>= mapM (canonicalizePath . (dir </>))
 
 -- Main function
 -- t_flag is used to signal if the user wants the total
 -- number of LOC per language printed instead of per file
-yascc :: [String] -> [(String, Int)] -> Bool -> IO()
+yascc :: [FilePath] -> [(String, Int)] -> Bool -> IO()
 yascc [] [] False = putStr("")
 yascc [] langs True = print_total langs
 yascc files@(x:xs) [] t_flag@(False) = do 

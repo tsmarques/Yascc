@@ -42,6 +42,7 @@ is_tab (x:xs)
 -- There's a differnece between a line with a comment and
 -- a commented line. This returns false if the line isn't
 -- completely commented
+-- i.e in C:
 -- // this is a commented line
 -- this is  a // line with a comment
 is_commented :: String -> String -> Bool
@@ -63,7 +64,7 @@ has_block ('/':'*': xs) "java" = True
 has_block ('{':'-': xs) "haskell" = True
 has_block (x:xs) lang = has_block xs lang
 
--- Returns the file lines, without the comment block. 
+-- Returns the file lines, without the comment block.
 remove_block :: [String] -> String -> [String]
 remove_block [] _ = []
 remove_block (x:xs) lang
