@@ -18,9 +18,7 @@ import Aux
 
 main = do  
    args <- getArgs
-   print args
-   print(nub(args))
---   parse_arg(nub(args))
+   parse_arg args
 
 -- Parsing of arguments
 parse_arg :: [String] -> IO()
