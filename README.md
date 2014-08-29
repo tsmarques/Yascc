@@ -8,7 +8,7 @@ I started this project to improve my programming skills and Haskell knowledge. T
 
 ### Install
 
-    1. Download source code
+    1. Download source code master branch
     2. Compile with "ghc src/yascc.hs"
     3. ln -s src/yascc ./yascc
     4. sudo mv yascc /usr/local/bin
@@ -22,3 +22,14 @@ If you want the output to be **file: # of loc** just use:
 To output the number of lines of code per language use:
 
     yascc --total <files/directory>
+
+
+### Currently
+
+This app is still in development.
+I'm working on my free time to find and fix bugs, and add/change features.
+
+### Branches
+
+    Master: stable version
+    Dev: Development branch. Might contain a non working version
