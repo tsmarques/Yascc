@@ -38,11 +38,11 @@ is_tab (x:xs)
   | (x == ' ') || (x == '\t') = is_tab xs
   | otherwise = False
 
--- Returns if a given line is commented, i.e in C, by //
+-- Returns if a given line is commented, e.g in C, by //
 -- There's a differnece between a line with a comment and
 -- a commented line. This returns false if the line isn't
 -- completely commented
--- i.e in C:
+-- e.g in C:
 -- // this is a commented line
 -- this is  a // line with a comment
 is_commented :: String -> String -> Bool
@@ -56,7 +56,7 @@ is_commented (x:xs) lang
   | (x == '\t') || (x == ' ') = is_commented xs lang
   | otherwise = False
 
--- Returns if a given line is commented by a comment block, i.e in C, /* */
+-- Returns if a given line is commented by a comment block, e.g in C, /* */
 has_block :: String -> String -> Bool
 has_block [] _ = False
 has_block ('/':'*': xs) "C" = True
@@ -94,7 +94,7 @@ has_start_block ('{':'-':xs) "haskell"  = True
 has_start_block (x:xs) lang = has_start_block xs lang
 
 -- Returns if a given line has the end block characters.
--- i.e in C, */
+-- e.g in C, */
 has_end_block :: String -> String -> Bool
 has_end_block [] _ = False
 has_end_block ('*':'/':xs) "C"  = True
@@ -103,7 +103,7 @@ has_end_block ('-':'}':xs) "haskell"  = True
 has_end_block (x:xs) lang = has_end_block xs lang
 
 -- Adds "_yascc" to a file name
--- i.e for "file.java" returns "file_yascc.java"
+-- e.g for "file.java" returns "file_yascc.java"
 -- Used when the "--print" option is passed
 -- to the program, to dump the parsed file in
 -- a new one.(name returned by this function)
