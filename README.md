@@ -3,12 +3,12 @@ yascc
 
 Yet Another Source Code Counter - Haskell software that counts lines of codes, ignoring commented lines. 
 
-I started this project to improve my programming skills and Haskell knowledge. The original name of the project was **locc(lines of code counter)** but a similar project had a similar name so I changed it. The code is fairly simple and throughout the various iterations of it I'll try to clean, optimize it and if relevant, use more advanced Haskell techniques
+  The original name of the project was **locc(lines of code counter)** but a similar project had a similar name so I changed it. The code is fairly simple and throughout the various iterations of it I'll try to clean, optimize it and if relevant, use more advanced Haskell techniques.
 
 
 ### Install
 
-    1. Download source code master branch
+    1. Download source code from master branch
     2. Compile with "ghc src/yascc.hs"
     3. ln -s src/yascc ./yascc
     4. sudo mv yascc /usr/local/bin
