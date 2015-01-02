@@ -34,7 +34,7 @@ parse_arg args@(x:xs)
 
 
 -- Removes files with no language specification
--- i.e yascc.hs is haskell but yascc is unknown
+-- e.g yascc.hs is haskell but yascc is unknown
 -- and therefore removed.
 -- If there's any directory  reads its content(files or folders)
 parse_files :: [FilePath] -> IO[FilePath]
